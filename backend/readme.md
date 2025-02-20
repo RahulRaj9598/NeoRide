@@ -209,3 +209,157 @@ curl -X POST http://localhost:3000/users/login \
 - Validation errors return 400 status code with detailed error messages
 - Missing required fields are caught at both service and validation levels
 - Duplicate email addresses are prevented by unique index
+
+## Captain Management System
+
+### Captain Registration
+Endpoint for registering new captains with vehicle details.
+
+#### Endpoint
+```
+POST /captain/register
+```
+
+#### Request Body
+```json
+{
+  "fullname": {
+    "firstname": "string",    // required, min 3 chars
+    "lastname": "string"      // optional, min 3 chars
+  },
+  "email": "string",         // required, unique
+  "password": "string",      // required, min 6 chars
+  "vehicle": {
+    "color": "string",       // required, min 3 chars
+    "plate": "string",       // required, min 3 chars
+    "capacity": "number",    // required, min 1
+    "vehicleType": "string"  // required, enum: ['motorcycle','car','auto']
+  }
+}
+```
+
+#### Validation Rules
+- **firstname**: Required, minimum 3 characters
+- **lastname**: Optional, minimum 3 characters if provided
+- **email**: Required, valid email format, unique
+- **password**: Required, minimum 6 characters
+- **vehicle.color**: Required, minimum 3 characters
+- **vehicle.plate**: Required, minimum 3 characters
+- **vehicle.capacity**: Required, numeric, minimum 1
+- **vehicle.vehicleType**: Required, must be one of: motorcycle, car, auto
+
+#### Success Response (201 Created)
+```json
+{
+  "captain": {
+    "_id": "mongodb_id",
+    "fullname": {
+      "firstname": "John",
+      "lastname": "Doe"
+    },
+    "email": "john@example.com",
+    "vehicle": {
+      "color": "black",
+      "plate": "ABC123",
+      "capacity": 4,
+      "vehicleType": "car"
+    },
+    "status": "inactive"
+  },
+  "token": "jwt_auth_token"
+}
+```
+
+### Captain Login
+Endpoint for authenticating captains.
+
+#### Endpoint
+```
+POST /captain/login
+```
+
+#### Request Body
+```json
+{
+  "email": "string",     // required
+  "password": "string"   // required
+}
+```
+
+#### Success Response (200 OK)
+```json
+{
+  "captain": {
+    "_id": "mongodb_id",
+    "fullname": {
+      "firstname": "John",
+      "lastname": "Doe"
+    },
+    "email": "john@example.com",
+    "vehicle": {
+      "color": "black",
+      "plate": "ABC123",
+      "capacity": 4,
+      "vehicleType": "car"
+    },
+    "status": "inactive"
+  },
+  "token": "jwt_auth_token"
+}
+```
+
+### Captain Profile
+Get captain's profile information.
+
+#### Endpoint
+```
+GET /captain/profile
+```
+
+#### Headers
+```
+Authorization: Bearer jwt_auth_token
+```
+
+### Captain Logout
+Endpoint for captain logout.
+
+#### Endpoint
+```
+GET /captain/logout
+```
+
+#### Headers
+```
+Authorization: Bearer jwt_auth_token
+```
+
+### Captain Model Schema
+```javascript
+{
+  fullname: {
+    firstname: String,    // required, min 3 chars
+    lastname: String,     // optional, min 3 chars
+  },
+  email: String,         // required, unique, lowercase
+  password: String,      // required, stored as hashed
+  socketId: String,      // optional
+  status: String,        // enum: ['active','inactive'], default: 'inactive'
+  vehicle: {
+    color: String,       // required, min 3 chars
+    plate: String,       // required, min 3 chars
+    capacity: Number,    // required, min 1
+    vehicleType: String  // required, enum: ['motorcycle','car','auto']
+  },
+  location: {
+    lat: Number,        // optional
+    lng: Number         // optional
+  }
+}
+```
+
+### Security Features
+- All captain endpoints except login/register are protected with JWT authentication
+- Password hashing using bcrypt
+- Input validation using express-validator
+- Token blacklisting on logout
